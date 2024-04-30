@@ -1,3 +1,6 @@
+mod stats;
+mod popular;
+
 use std::error::Error;
 use std::fs::File;
 use csv::ReaderBuilder;
@@ -73,17 +76,27 @@ fn read_csv(file_path: &str) -> Result<Vec<(usize, usize)>, Box<dyn Error>> {
     Ok(tuples)
 }
 
-
-
 fn main() -> Result<(), Box<dyn Error>>{
     let file_path = "musae_ES_edges.csv";
     let tuples = read_csv(file_path)?;
-    println!("Vector of tuples: {:?}", tuples[0]);
     let Some(max_val) = tuples.iter().max_by_key(|&(val1, _)| val1) else {todo!{}};
     let graph = Graph::create_undirected(max_val.0 + 1, &tuples);
     let node_deg = Graph::node_degrees(&graph);
-    for i in node_deg {
-        println!("{}", i);
-    }
+    let mut stats_struct = stats::Stats::new(node_deg);
+    let mean = stats::Stats::mean(&stats_struct);
+    let stdev = stats::Stats::stdev(&stats_struct);
+    let desc = stats::Stats::descriptive_stats(&mut stats_struct);
+    let z_score = stats::Stats::zscores(&stats_struct);
+    let popularity = popular::popularity_scale(z_score);
+    let mut celebs = vec![];
+    for i in 0..popularity.len() {
+        if popularity[i] == 7 {
+            celebs.push(i);
+        }
+    } 
+    println!("The edges of the celebrities (7 on popularity scale) are {:?}.", celebs);
+    println!("The average number of friendships every twitch user has is approximately {}.", mean.round());
+    println!("The standard deviation for twitch user friendships is approximately {}.", stdev.round());
+    println!("Minimum: {} | Q1: {} | Median: {} | Q3: {} | Maximum: {}", desc[0], desc[1], desc[2], desc[3], desc[4]);
     Ok(())
 }
