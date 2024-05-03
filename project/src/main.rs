@@ -1,17 +1,17 @@
-mod stats;
+mod stats; // importing my 2 other files
 mod popular;
 
 use std::error::Error;
 use std::fs::File;
 use csv::ReaderBuilder;
 
-type Vertex = usize;
+type Vertex = usize; // imported from lecture - defining types of the following types
 type ListOfEdges = Vec<(Vertex,Vertex)>;
 type AdjacencyLists = Vec<Vec<Vertex>>;
 
 #[derive(Debug)]
-struct Graph {
-    n: usize, // vertex labels in {0,...,n-1}
+struct Graph { // imported from lecture
+    n: usize, 
     outedges: AdjacencyLists,
 }
 
@@ -26,18 +26,18 @@ fn reverse_edges(list:&ListOfEdges)
 }
 
 impl Graph {
-    fn add_directed_edges(&mut self,
+    fn add_directed_edges(&mut self, // imported from lecture - adds directed edges to an existing graph
                           edges:&ListOfEdges) {
         for (u,v) in edges {
             self.outedges[*u].push(*v);
         }
     }
-    fn sort_graph_lists(&mut self) {
+    fn sort_graph_lists(&mut self) { // imported from lecture - sorts the graph list
         for l in self.outedges.iter_mut() {
             l.sort();
         }
     }
-    fn create_directed(n:usize,edges:&ListOfEdges)
+    fn create_directed(n:usize,edges:&ListOfEdges) // imported from lecture - creates a directed graph
                                             -> Graph {
         let mut g = Graph{n,outedges:vec![vec![];n]};
         g.add_directed_edges(edges);
@@ -45,14 +45,14 @@ impl Graph {
         g                                        
     }
     
-    fn create_undirected(n:usize,edges:&ListOfEdges) // will have double he amount of edges (1 to 2 and 2 to 1)
+    fn create_undirected(n:usize,edges:&ListOfEdges) // imported from lecture - creates an undirected graph
                                             -> Graph {
         let mut g = Self::create_directed(n,edges);
         g.add_directed_edges(&reverse_edges(edges));
         g.sort_graph_lists();
         g                                        
     }
-    fn node_degrees(&self) -> Vec<usize> {
+    fn node_degrees(&self) -> Vec<usize> { // returns a vector of node degrees from a graph
         let mut degrees = vec![0; self.n];
         for (i, l) in self.outedges.iter().enumerate() {
             degrees[i] = l.len();
@@ -88,15 +88,120 @@ fn main() -> Result<(), Box<dyn Error>>{
     let desc = stats::Stats::descriptive_stats(&mut stats_struct);
     let z_score = stats::Stats::zscores(&stats_struct);
     let popularity = popular::popularity_scale(z_score);
-    let mut celebs = vec![];
-    for i in 0..popularity.len() {
-        if popularity[i] == 7 {
-            celebs.push(i);
-        }
-    } 
-    println!("The edges of the celebrities (7 on popularity scale) are {:?}.", celebs);
-    println!("The average number of friendships every twitch user has is approximately {}.", mean.round());
+    let celebs = popular::celeb(popularity);
+    println!("There are {} vertices in the data.", graph.n);
+    println!("The edges that are celebrities (7 on popularity scale) are {:?}.", celebs);
+    println!("The mean of friendships every twitch user has is approximately {}.", mean.round());
     println!("The standard deviation for twitch user friendships is approximately {}.", stdev.round());
     println!("Minimum: {} | Q1: {} | Median: {} | Q3: {} | Maximum: {}", desc[0], desc[1], desc[2], desc[3], desc[4]);
     Ok(())
+}
+
+mod tests {
+    #[cfg(test)]
+    use super::*;
+
+    #[test]
+    fn test_reverse_edges() {
+        let edges = vec![(1, 2), (2, 3), (3, 4)];
+        let reversed_edges = reverse_edges(&edges);
+        assert_eq!(reversed_edges, vec![(2, 1), (3, 2), (4, 3)]);
+    }
+
+    #[test]
+    fn test_add_directed_edges() {
+        let mut graph = Graph {
+            n: 4,
+            outedges: vec![vec![], vec![], vec![], vec![]],
+        };
+        let edges = vec![(0, 1), (1, 2), (2, 3)];
+        graph.add_directed_edges(&edges);
+        assert_eq!(graph.outedges, vec![vec![1], vec![2], vec![3], vec![]]);
+    }
+
+    #[test]
+    fn test_sort_graph_lists() {
+        let mut graph = Graph {
+            n: 4,
+            outedges: vec![vec![3, 1], vec![4,1], vec![], vec![2]],
+        };
+        graph.sort_graph_lists();
+        assert_eq!(graph.outedges, vec![vec![1, 3], vec![1,4], vec![], vec![2]]);
+    }
+
+    #[test]
+    fn test_create_directed() {
+        let edges = vec![(0, 1), (1, 2), (2, 3)];
+        let graph = Graph::create_directed(4, &edges);
+        assert_eq!(
+            graph.outedges,
+            vec![vec![1], vec![2], vec![3], vec![]]
+        );
+    }
+
+    #[test]
+    fn test_node_degrees() {
+        let graph = Graph {
+            n: 4,
+            outedges: vec![vec![1, 3], vec![2], vec![3], vec![4]],
+        };
+        let degrees = graph.node_degrees();
+        assert_eq!(degrees, vec![2, 1, 1, 1]);
+    }
+
+    #[test]
+    fn test_descriptive_stats() {
+        let mut stats_struct = stats::Stats::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let desc = stats::Stats::descriptive_stats(&mut stats_struct);
+        assert_eq!(desc, vec![1.0, 3.0, 5.5, 8.0, 10.0]);
+    }
+
+    #[test]
+    fn test_mean() {
+        let stats_struct = stats::Stats::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let mean = stats::Stats::mean(&stats_struct);
+        assert_eq!(mean, 5.5);
+    }
+
+    #[test]
+    fn test_stdev() {
+        let stats_struct = stats::Stats::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let stdev = stats::Stats::stdev(&stats_struct);
+        assert_eq!(stdev, 2.8722813232690143);
+    }
+
+    #[test]
+    fn test_zscores() {
+        let stats_struct = stats::Stats::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        let zscores = stats::Stats::zscores(&stats_struct);
+        assert_eq!(
+            zscores,
+            vec![-1.5666989036012806,-1.2185435916898848,-0.8703882797784892,-0.5222329678670935,-0.17407765595569785,0.17407765595569785,
+                0.5222329678670935,0.8703882797784892,1.2185435916898848,1.5666989036012806]);
+    }
+
+    #[test]
+    fn test_popularity_scale() {
+        let zscores = vec![
+            -1.5666989036012806,
+            -1.2185435916898848,
+            -0.8703882797784892,
+            -0.5222329678670935,
+            -0.17407765595569785,
+            0.17407765595569785,
+            0.5222329678670935,
+            0.8703882797784892,
+            1.2185435916898848,
+            1.5666989036012806,
+        ];
+        let popularity = popular::popularity_scale(zscores);
+        assert_eq!(popularity, vec![2, 2, 3, 3, 3, 4, 4, 4, 5, 5]);
+    }
+
+    #[test]
+    fn test_celeb() {
+        let pop_scale = vec![1, 1, 1, 2, 3, 4, 4, 5, 5, 7];
+        let celebs = popular::celeb(pop_scale);
+        assert_eq!(celebs, vec![9]);
+    }
 }
