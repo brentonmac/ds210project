@@ -91,6 +91,7 @@ fn main() -> Result<(), Box<dyn Error>>{
     let celebs = popular::celeb(popularity);
     println!("There are {} vertices in the data.", graph.n);
     println!("The edges that are celebrities (7 on popularity scale) are {:?}.", celebs);
+    println!("There are {} celebrities out of {} people.", celebs.len(), graph.n);
     println!("The mean of friendships every twitch user has is approximately {}.", mean.round());
     println!("The standard deviation for twitch user friendships is approximately {}.", stdev.round());
     println!("Minimum: {} | Q1: {} | Median: {} | Q3: {} | Maximum: {}", desc[0], desc[1], desc[2], desc[3], desc[4]);
