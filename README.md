@@ -1,0 +1,3 @@
+This is my DS210 Final Project! My objective for this project was to classify a network of online friends by how popular each person is, and find the celebrities within a set of people. To do this, I wanted to create a popularity scale, where the more popular people had a higher score. For my dataset, I used a twitch dataset from SNAP Stanford, named Twitch Social Networks.
+
+Within the project folder, there is the src folder, which includes all of my Rust files. The project folder also includes the dataset I used, and my writeup for the project if you are interested in the output and analysis.
